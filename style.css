@@ -1,0 +1,28 @@
+:not(:defined) {
+    visibility: hidden;
+}
+
+body {
+    font-size: 16pt;
+}
+h1 {
+    text-align: center;
+    font-size: 30pt;
+}
+#settings {
+    display:flex;
+    flex-direction: column;
+    list-style-type: none; /* Remove bullets */
+    padding: 0;
+    margin: 0;
+}
+.row {
+    padding: 10pt; /* Remove padding */
+    margin: 5pt; /* Remove margins */
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+}
+.row > * {
+    width: 100%;
+}

@@ -1,0 +1,41 @@
+<html>
+
+<head>
+    <title>Espresso Controller</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="style.css">
+    <script type="module"
+        src="https://cdn.jsdelivr.net/npm/@microsoft/fast-components/dist/fast-components.min.js"></script>
+
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+    <link rel="manifest" href="site.webmanifest">
+</head>
+
+<body>
+    <h1>Espresso Control<span id="status"></span></h1>
+    <fast-button id="connect">Connect</fast-button>
+
+    <ul id="settings">
+        <li class="row">
+            <div>Current Temperature: </div>
+            <div id="temperature">N/A</div>°C
+        </li>
+        <li class="row">
+            <div>Temperatue</div> <input disabled type="number" id="setTemp" name="temp" min="10" max="120">
+        </li>
+        <li class="row">
+            <div>kP</div> <input disabled type="number" id="kP" name="kP" min="10" max="100">
+        </li>
+        <li class="row">
+            <div>kI</div> <input disabled type="number" id="kI" name="kI" min="10" max="100">
+        </li>
+        <li class="row">
+            <div>kD</div> <input disabled type="number" id="kD" name="kD" min="10" max="100">
+        </li>
+    </ul>
+    <script src="app.js"></script>
+</body>
+
+</html>
