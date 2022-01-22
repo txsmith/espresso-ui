@@ -2,12 +2,24 @@
     visibility: hidden;
 }
 
+body,
+html {
+    min-height: 100vh;
+    padding: 0;
+    margin: 0;
+    --top-offset: calc(var(--design-unit) * 28px);
+}
 body {
-    font-size: 16pt;
+    background-color: var(--fill-color);
+    color: var(--neutral-foreground-rest);
+    font-family: var(--body-font);
+    overflow: hidden;
+    --top-offset: calc(var(--design-unit) * 8px);
+    padding-top: var(--top-offset);
 }
 h1 {
     text-align: center;
-    font-size: 30pt;
+    /* font-size: 30pt; */
 }
 #settings {
     display:flex;
@@ -25,4 +37,19 @@ h1 {
 }
 .row > * {
     width: 100%;
+}
+#temperature {
+    text-align: right;
+}
+#connect {
+    width: 100%;
+}
+fast-toolbar {
+    position: absolute;
+    bottom:0;
+    border-radius: 0;
+    width: calc(100% - 1em);
+}
+fast-divider {
+    margin: var(--top-offset) 1em;
 }
