@@ -11,36 +11,52 @@
     <link rel="icon" type="image/png" sizes="32x32" href="resources/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="resources/favicon-16x16.png">
     <link rel="manifest" href="resources/site.webmanifest">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400&display=swap" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/2dce3709ec.js" crossorigin="anonymous"></script>
 </head>
 
 <body>
-    <h1>Espresso Control<span id="status"></span></h1>
+    <div id="content">
+        <h1>Espresso Control</h1>
 
-    <ul id="settings">
-        <li class="row">
-            <div>Current Temperature: </div>
-            <div id="temperature">N/A</div>°C
-        </li>
-        <fast-divider></fast-divider>
-        <li class="row">
-            <div>Temperatue</div>
-            <fast-number-field disabled appearance="filled" id="setTemp" name="temp" min="10" max="120" step="1">
-        </li>
-        <li class="row">
-            <div>kP</div>
-            <fast-text-field disabled appearance="filled" id="kP" name="kP">
-        </li>
-        <li class="row">
-            <div>kI</div>
-            <fast-text-field disabled appearance="filled" id="kI" name="kI">
-        </li>
-        <li class="row">
-            <div>kD</div>
-            <fast-text-field disabled appearance="filled" id="kD">
-        </li>
-    </ul>
-    <fast-toolbar>
-        <fast-button id="connect" appearance="accent">Connect</fast-button>
+        <fast-card id="settings">
+            <ul>
+                <li class="row">
+                    <div>Current Temperature: </div>
+                    <div id="temperature">N/A</div>°C
+                </li>
+                <fast-divider></fast-divider>
+                <li class="row">
+                    <div>Temperatue</div>
+                    <fast-number-field disabled appearance="filled" id="setTemp" name="temp" min="10" max="120"
+                        step="1">
+                        <span slot="end">°C</span>
+                    </fast-number-field>
+                </li>
+                <li class="row">
+                    <div>kP</div>
+                    <fast-text-field disabled appearance="filled" id="kP" name="kP">
+                </li>
+                <li class="row">
+                    <div>kI</div>
+                    <fast-text-field disabled appearance="filled" id="kI" name="kI">
+                </li>
+                <li class="row">
+                    <div>kD</div>
+                    <fast-text-field disabled appearance="filled" id="kD">
+                </li>
+            </ul>
+
+        </fast-card>
+    </div>
+    <fast-toolbar id="status-bar">
+        <fast-progress-ring id="connect-progress" paused></fast-progress-ring>
+        <fast-button id="connect" appearance="accent">
+            <i slot="start" class="fab fa-bluetooth"></i>
+            <span>Connect</span>
+        </fast-button>
     </fast-toolbar>
     <script src="dist/bundle.js"></script>
 </body>

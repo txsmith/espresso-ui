@@ -1,42 +1,59 @@
 import {
-    baseLayerLuminance,
-    ColorRecipe,
     controlCornerRadius,
     density,
+    accentPalette,
     fastButton,
-    fastCard,
     fastNumberField,
     fastTextField,
     fastDivider,
     fastToolbar,
-    fillColor,
-    neutralFillLayerRecipe,
-    neutralPalette,
+    fastProgress,
+    fastProgressRing,
+    fastCard,
     PaletteRGB,
     provideFASTDesignSystem,
-    StandardLuminance,
     SwatchRGB,
+    strokeWidth,
+    disabledOpacity,
+    baseLayerLuminance,
+    StandardLuminance,
+    baseHeightMultiplier,
+    numberFieldStyles,
+    typeRampBaseFontSize
 } from "@microsoft/fast-components";
 
-
+import { parseColorHexRGB } from "@microsoft/fast-colors";
 provideFASTDesignSystem().register(
     fastButton(),
     fastNumberField(),
     fastTextField(),
     fastDivider(),
     fastToolbar(),
+    fastProgressRing(),
+    fastCard(),
 );
 
+baseLayerLuminance.withDefault(0.2);
 controlCornerRadius.withDefault(28);
-density.withDefault(1);
+baseHeightMultiplier.withDefault(8);
+density.withDefault(4);
+disabledOpacity.withDefault(0.3);
+strokeWidth.withDefault(4);
+typeRampBaseFontSize.withDefault("20px");
+accentPalette.withDefault(PaletteRGB.from(SwatchRGB.from(parseColorHexRGB("#d4964e"))));
+// neutralPalette.withDefault(PaletteRGB.from(SwatchRGB.from(parseColorHexRGB("#2efefe"))));
 
+
+const body = document.getElementsByName('body')
 const connectBtn = document.getElementById("connect");
+const connectBtnText = document.querySelector("#connect > span");
+const connectProgress = document.getElementById("connect-progress");
 const tempDisplay = document.getElementById("temperature");
 const tempSetting = document.getElementById("setTemp");
 const pSetting = document.getElementById("kP");
 const iSetting = document.getElementById("kI");
 const dSetting = document.getElementById("kD");
-const statusDisplay = document.getElementById("status");
+const statusBar = document.getElementById("status-bar");
 
 const espressoServiceUUID = "00c0ffee-add1-c5ed-0000-000000000000"
 const temperatureReadingUUID = "00c0ffee-add1-c5ed-0000-000000000001"
@@ -47,33 +64,47 @@ const dUUID = "00c0ffee-add1-c5ed-0000-000000000005"
 const heatPwrUUID = "00c0ffee-add1-c5ed-0000-000000000006"
 const bleServiceOptions = { filters: [{ services: [espressoServiceUUID] }] };
 
-const notificationsLiveCharacter = "🟢"
-const connectedCharacter = "🔵";
-const disconnectedCharacter = "⚪️";
-
-statusDisplay.innerText = disconnectedCharacter;
 
 var bleDevice;
 var bleService;
 
-connectBtn.addEventListener('click', event => {
-    startBLE();
-});
+connectBtn.addEventListener("click", startBLE);
+
+function onPairingStart() {
+    connectBtnText.innerText = "Pairing..."
+    connectBtn.appearance = "stealth";
+    connectBtn.setAttribute("disabled", true);
+    connectProgress.removeAttribute("paused");
+    connectBtn.removeEventListener("click", startBLE);
+}
+function onDisconnected() {
+    connectBtnText.innerText = "Connect"
+    connectBtn.appearance = "accent";
+    connectBtn.removeAttribute("disabled");
+    connectProgress.setAttribute("paused", true);
+    connectBtn.addEventListener("click", startBLE);
+    connectBtn.removeEventListener("click", disconnectBLE);
+    bleDevice = null;
+    bleService = null;
+    tempDisplay.innerText = "N/A"
+}
+function onConnected() {
+    connectBtnText.innerText = "Disconnect"
+    connectBtn.appearance = "stealth";
+    connectBtn.removeAttribute("disabled");
+    connectProgress.setAttribute("paused", true);
+    connectBtn.removeEventListener("click", startBLE);
+    connectBtn.addEventListener("click", disconnectBLE)
+}
 
 async function startBLE() {
-    bleDevice = await navigator.bluetooth.requestDevice(bleServiceOptions);
+    onPairingStart();
+    bleDevice = await navigator.bluetooth.requestDevice(bleServiceOptions).catch((error) => {
+        onDisconnected();
+        throw error;
+    });
     console.log("Device found:", bleDevice);
-    bleDevice.addEventListener(
-        "gattserverdisconnected",
-        (event) => {
-            console.log("Disconnected", event);
-            statusDisplay.innerText = disconnectedCharacter;
-            tempDisplay.innerText = "N/A"
-            bleDevice = null;
-            bleService = null;
-        }
-    );
-    statusDisplay.innerText = connectedCharacter;
+    bleDevice.addEventListener("gattserverdisconnected", onDisconnected);
     await bleDevice.gatt.connect();
     bleService = await bleDevice.gatt.getPrimaryService(espressoServiceUUID);
     console.log("Primary service:", bleService);
@@ -84,6 +115,10 @@ async function startBLE() {
     await ConfigInputEventListener.start(dSetting, dUUID, 3);
 }
 
+async function disconnectBLE() {
+    await bleDevice.gatt.disconnect();
+}
+
 async function subscribeToTemperatureMeasurements() {
     const tempCharacteristic = await bleService.getCharacteristic(temperatureReadingUUID);
     console.log("Temperature Characteristic:", tempCharacteristic);
@@ -92,7 +127,7 @@ async function subscribeToTemperatureMeasurements() {
             "characteristicvaluechanged",
             (event) => {
                 console.log("Received notification", event);
-                statusDisplay.innerText = notificationsLiveCharacter;
+                onConnected();
                 tempDisplay.innerText = Math.round(tempCharacteristic.value.getFloat64(0, true) * 10) / 10;
             }
         );
@@ -100,20 +135,6 @@ async function subscribeToTemperatureMeasurements() {
     } else {
         console.error("Expected characteristic to have the notify property", tempCharacteristic);
     }
-}
-
-async function writeTemperatureSetting(event) {
-    const setTemperatureCharacteristic = await bleService.getCharacteristic(setTemperatureUUID);
-    const characteristicValue = await setTemperatureCharacteristic.readValue()
-    var lastValue = Math.round(characteristicValue.getFloat64(0, true) * 10000) / 10000;
-    console.log(event);
-    if (lastValue != event.target.value) {
-        const bufferView = new DataView(new ArrayBuffer(8));
-        bufferView.setFloat64(0, event.target.value, true);
-        await setTemperatureCharacteristic.writeValue(bufferView);
-        lastValue = event.target.value;
-    }
-
 }
 
 class ConfigInputEventListener {
@@ -136,6 +157,7 @@ class ConfigInputEventListener {
         const characteristic = await bleService.getCharacteristic(uuid);
         console.log("Characteristic", uuid, characteristic);
         const initialValue = await characteristic.readValue().then(buf => buf.getFloat64(0, true));
+        console.log("Value", initialValue);
         return new ConfigInputEventListener(input, characteristic, initialValue, roundDigits);
     }
 

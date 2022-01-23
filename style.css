@@ -7,33 +7,41 @@ html {
     min-height: 100vh;
     padding: 0;
     margin: 0;
-    --top-offset: calc(var(--design-unit) * 28px);
+    background-color:#767676 ;
+    --top-offset: calc(var(--design-unit) * 8px);
 }
 body {
     background-color: var(--fill-color);
     color: var(--neutral-foreground-rest);
-    font-family: var(--body-font);
-    overflow: hidden;
-    --top-offset: calc(var(--design-unit) * 8px);
+    font-family: 'Roboto', sans-serif;
+    font-size: var(--type-ramp-base-font-size);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    --card-height: auto;
+}
+#content {
     padding-top: var(--top-offset);
+    overflow: scroll;
+    flex-grow: 1;
+    padding: 0 calc(5 *var(--design-unit) * 1px);
 }
 h1 {
     text-align: center;
     /* font-size: 30pt; */
 }
 #settings {
-    display:flex;
-    flex-direction: column;
-    list-style-type: none; /* Remove bullets */
+    padding: 20px;
+}
+#settings > ul {
+    display:grid;
+    gap: 20px;
     padding: 0;
     margin: 0;
 }
 .row {
-    padding: 10pt; /* Remove padding */
-    margin: 5pt; /* Remove margins */
     display: flex;
-    flex-direction: row;
-    align-items: stretch;
+    align-items: center;
 }
 .row > * {
     width: 100%;
@@ -41,15 +49,19 @@ h1 {
 #temperature {
     text-align: right;
 }
-#connect {
-    width: 100%;
-}
-fast-toolbar {
-    position: absolute;
-    bottom:0;
+#status-bar {
     border-radius: 0;
-    width: calc(100% - 1em);
+    box-shadow: black 0px 6px 8px 1px;
+    display: flex;
+    flex-direction: column;
 }
-fast-divider {
-    margin: var(--top-offset) 1em;
+#connect {
+    flex-grow: 1;
+    font-size: var(--type-ramp-plus-2-font-size);
+}
+#connect > i {
+    font-size: var(--type-ramp-plus-3-font-size);
+}
+fast-progress {
+    width: 100%;
 }
