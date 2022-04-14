@@ -34,7 +34,6 @@ export class EspressoBLEService implements EspressoController {
 
     private listeners: EspressoEventListener[] = [];
 
-    private connected: boolean = false;
     private configuredTargetTemp?: number;
     private configuredP?: number;
     private configuredI?: number;
@@ -67,7 +66,6 @@ export class EspressoBLEService implements EspressoController {
     }
     disconnect(): void {
         this.gattServer.disconnect();
-        this.connected = false;
     }
 
     private async writeCharacteristic(uuid: string, currentValue: number | undefined, value: number, roundDigits: number, onChange: (l: EspressoEventListener) => (v: number) => void): Promise<void> {
@@ -122,7 +120,6 @@ export class EspressoBLEService implements EspressoController {
         const pCharacteristic = await this.bleService.getCharacteristic(EspressoBLEService.pUUID);
         const iCharacteristic = await this.bleService.getCharacteristic(EspressoBLEService.iUUID);
         const dCharacteristic = await this.bleService.getCharacteristic(EspressoBLEService.dUUID);
-        this.connected = true;
         this.configuredTargetTemp = await tempCharacteristic.readValue().then(buf => buf.getFloat64(0, true));
         this.configuredP = await pCharacteristic.readValue().then(buf => buf.getFloat64(0, true));
         this.configuredI = await iCharacteristic.readValue().then(buf => buf.getFloat64(0, true));

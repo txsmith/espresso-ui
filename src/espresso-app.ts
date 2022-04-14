@@ -3,18 +3,18 @@ import { FASTElement, customElement, attr, html, css, when } from '@microsoft/fa
 import { observable } from "@microsoft/fast-element";
 import { library, dom } from '@fortawesome/fontawesome-svg-core';
 import { faBluetooth } from '@fortawesome/free-brands-svg-icons'
-import { faGear, faDroplet, faLinkSlash, faLink, faBolt } from '@fortawesome/free-solid-svg-icons'
+import { faGear, faDroplet, faLinkSlash, faLink, faBolt, faCircleQuestion } from '@fortawesome/free-solid-svg-icons'
 import { EspressoBLEService, EspressoController, EspressoEventListener } from './espresso-service';
 
-library.add(faBluetooth, faGear, faDroplet, faLinkSlash, faLink, faBolt);
+library.add(faBluetooth, faGear, faDroplet, faLinkSlash, faLink, faBolt, faCircleQuestion);
 
 const template = html<EspressoApp>`
 <fast-toolbar>
-        ${when(x => x.temp, html<EspressoApp>`<div>${x => x.temp}</div>`)}
-        ${when(x => x.heatPwr! >= 0.8, html<EspressoApp>`<i class="active fa-solid fa-bolt"></i>`)}
-        ${when(x => x.heatPwr! > 0 && x.heatPwr! < 0.8, html<EspressoApp>`<i class="fa-solid fa-bolt"></i>`)}
-        ${when(x => x.isEspressoConnected, html<EspressoApp>`<i class="fa-solid fa-link"></i>`)}
-        ${when(x => !x.isEspressoConnected, html<EspressoApp>`<i class="fa-solid fa-link-slash"></i>`)}
+    ${when(x => x.temp, html<EspressoApp>`<div>${x => x.temp?.toFixed(1)}</div>`)}
+    ${when(x => x.heatPwr! >= 0.8, html<EspressoApp>`<i class="active fa-solid fa-bolt"></i>`)}
+    ${when(x => x.heatPwr! > 0 && x.heatPwr! < 0.8, html<EspressoApp>`<i class="fa-solid fa-bolt"></i>`)}
+    ${when(x => x.isEspressoConnected, html<EspressoApp>`<i class="fa-solid fa-link"></i>`)}
+    ${when(x => !x.isEspressoConnected, html<EspressoApp>`<i hidden class="fa-solid fa-link-slash"></i>`)}
 </fast-toolbar>
 <fast-tabs>
     <fast-tab slot="tab">
@@ -23,25 +23,22 @@ const template = html<EspressoApp>`
     <fast-tab slot="tab">
         <i class="fa-solid fa-gear"></i>
     </fast-tab>
+    <fast-tab slot="tab">
+        <i class="fa-solid fa-circle-question"></i>
+    </fast-tab>
 
     <fast-tab-panel slot="tabpanel">
         <div id="content">
             <h3>Pump control</h1>
-            <fast-card id="settings">
-                TODO:
-                <ol>
-                    <li>Status bar up top</li>
-                    <li>Make buttons work</li>
-                    <li>Create control for pump</li>
-                    <li>Shot timer</li>
-                </ol>
+            <fast-card id="pump-slider" class="content-card">
+                100%
             </fast-card>
         </div>
     </fast-tab-panel>
     <fast-tab-panel slot="tabpanel">
         <div id="content">
             <h3>Settings</h1>
-            <fast-card id="settings">
+            <fast-card id="settings" class="content-card">
                 <ul>
                     <li class="row">
                         <div>Temperatue</div>
@@ -64,7 +61,7 @@ const template = html<EspressoApp>`
                 </ul>
         
             </fast-card>
-            <fast-card id="status-bar">
+            <fast-card id="connect-card">
                 <fast-progress-ring id="connect-progress" ?paused=${x => !x.isConnecting}></fast-progress-ring>
                 <fast-button id="connect" ?disabled=${x => x.isConnecting} appearance=${x => x.isEspressoConnected || x.isConnecting ? "stealth" : "accent"} @click=${x => x.connectButtonClick()}>
                     <i slot="start" class="fab fa-bluetooth fa-2x"></i>
@@ -76,10 +73,26 @@ const template = html<EspressoApp>`
             </fast-card>
         </div>
     </fast-tab-panel>
+    <fast-tab-panel slot="tabpanel">
+        <div id="content">
+            <fast-card class="content-card">
+                TODO:
+                <ol>
+                    <li>Fix icon duplication</li>
+                    <li>Implement heat power on esp32</li>
+                    <li>Create control for pump</li>
+                    <li>Shot timer</li>
+                </ol>
+            </fast-card>
+        </div>
+    </fast-tab-panel>
 </fast-tabs>
 `;
 
 const styles = css`
+:host([hidden]) {
+    display: none;
+}
 :host {
     height: 100vh;
     display: flex;
@@ -92,11 +105,12 @@ const styles = css`
     overflow: scroll;
     flex-grow: 1;
     padding: 0 calc(5 *var(--design-unit) * 1px);
+    padding-bottom: calc(5 *var(--design-unit) * 1px);
 }
 h1, h2, h3, h4, h5 {
     text-align: center;
 }
-#settings {
+.content-card {
     padding: 20px;
 }
 #settings > ul {
@@ -115,12 +129,8 @@ h1, h2, h3, h4, h5 {
 #temperature {
     text-align: right;
 }
-#status-bar {
-    // border-radius: 0;
-    // box-shadow: black 0px 0 8px -4px;
+#connect-card {
     display: flex;
-    // flex-direction: column;
-    // z-index: 1;
 }
 #connect {
     flex-grow: 1;
@@ -150,6 +160,26 @@ fast-toolbar svg {
 .active {
   color: var(--accent-foreground-rest);
 }
+#pump-slider {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+    margin-top: 40px;
+    margin-bottom: 40px;
+    margin-left: auto;
+    margin-right: auto;
+    user-select: none;
+    width: 100px;
+    height: 40vh;
+    transition: width 0.25s, height 0.25s, margin 0.25s;
+}
+#pump-slider:active {
+    width: 180px;
+    margin-top: 0px;
+    margin-bottom: 0px;
+    height: calc(40vh + 80px);
+}
 `;
 
 @customElement({
@@ -157,8 +187,6 @@ fast-toolbar svg {
     template,
     styles
 })
-
-
 export class EspressoApp extends FASTElement {
     @observable isConnecting: Boolean = false;
     @observable isEspressoConnected: Boolean = false;
