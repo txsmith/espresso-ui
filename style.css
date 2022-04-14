@@ -1,13 +1,11 @@
 :not(:defined) {
     visibility: hidden;
 }
-
 body,
 html {
     min-height: 100vh;
     padding: 0;
     margin: 0;
-    background-color:#767676 ;
     --top-offset: calc(var(--design-unit) * 8px);
 }
 body {
@@ -15,53 +13,4 @@ body {
     color: var(--neutral-foreground-rest);
     font-family: 'Roboto', sans-serif;
     font-size: var(--type-ramp-base-font-size);
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    --card-height: auto;
-}
-#content {
-    padding-top: var(--top-offset);
-    overflow: scroll;
-    flex-grow: 1;
-    padding: 0 calc(5 *var(--design-unit) * 1px);
-}
-h1 {
-    text-align: center;
-    /* font-size: 30pt; */
-}
-#settings {
-    padding: 20px;
-}
-#settings > ul {
-    display:grid;
-    gap: 20px;
-    padding: 0;
-    margin: 0;
-}
-.row {
-    display: flex;
-    align-items: center;
-}
-.row > * {
-    width: 100%;
-}
-#temperature {
-    text-align: right;
-}
-#status-bar {
-    border-radius: 0;
-    box-shadow: black 0px 6px 8px 1px;
-    display: flex;
-    flex-direction: column;
-}
-#connect {
-    flex-grow: 1;
-    font-size: var(--type-ramp-plus-2-font-size);
-}
-#connect > i {
-    font-size: var(--type-ramp-plus-3-font-size);
-}
-fast-progress {
-    width: 100%;
 }

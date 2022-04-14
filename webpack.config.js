@@ -4,15 +4,15 @@ module.exports = function (env, { mode }) {
     const production = mode === "production";
     return {
         mode: production ? "production" : "development",
-        devtool: production ? "source-maps" : "inline-source-map",
+        devtool: production ? "source-map" : "inline-source-map",
         entry: {
-            app: ["./src/app.js"],
+            app: ["./src/main.ts"],
         },
         output: {
             filename: "bundle.js",
         },
         resolve: {
-            extensions: [".js", ".html", ".css"],
+            extensions: [".ts", ".js", ".html", ".css"],
             modules: ["src", "node_modules"],
         },
         devServer: {
@@ -20,10 +20,20 @@ module.exports = function (env, { mode }) {
             historyApiFallback: true,
             writeToDisk: true,
             open: !process.env.CI,
-            lazy: false,
+            open: false
         },
         module: {
-            rules: [],
+            rules: [
+                {
+                    test: /\.ts$/i,
+                    use: [
+                        {
+                            loader: 'ts-loader'
+                        }
+                    ],
+                    exclude: /node_modules/
+                }
+            ],
         },
     };
 };
