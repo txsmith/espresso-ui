@@ -66,9 +66,12 @@ const template = html<EspressoApp>`
             </fast-card>
             <fast-card id="status-bar">
                 <fast-progress-ring id="connect-progress" ?paused=${x => !x.isConnecting}></fast-progress-ring>
-                <fast-button id="connect" appearance="accent" @click=${x => x.connectButtonClick()}>
+                <fast-button id="connect" ?disabled=${x => x.isConnecting} appearance=${x => x.isEspressoConnected || x.isConnecting ? "stealth" : "accent"} @click=${x => x.connectButtonClick()}>
                     <i slot="start" class="fab fa-bluetooth fa-2x"></i>
-                    <span>Connect</span>
+                    <span>
+                        ${when(x => !x.isEspressoConnected, html<string>`Connect`)}
+                        ${when(x => x.isEspressoConnected, html<string>`Disconnect`)}
+                    </span>
                 </fast-button>
             </fast-card>
         </div>
@@ -92,7 +95,6 @@ const styles = css`
 }
 h1, h2, h3, h4, h5 {
     text-align: center;
-    /* margin: calc(5 * var(--design-unit) * 1px) 0; */
 }
 #settings {
     padding: 20px;
@@ -158,17 +160,16 @@ fast-toolbar svg {
 
 
 export class EspressoApp extends FASTElement {
-
     @observable isConnecting: Boolean = false;
     @observable isEspressoConnected: Boolean = false;
     @observable p?: number;
     @observable i?: number;
     @observable d?: number;
-    @observable targetTemp: number | undefined;
+    @observable targetTemp?: number;
     @observable temp?: number
     @observable heatPwr?: number;
 
-    controller: EspressoController | undefined;
+    controller?: EspressoController;
 
     setP(event: Event): void {
         if (this.controller) { this.controller.setP(Number.parseFloat((event.target as NumberField).currentValue)); }
@@ -207,13 +208,16 @@ class EspressoAppListener extends EspressoEventListener {
         this.app.isConnecting = true;
     }
     onConnected(controller: EspressoController): void {
+        this.app.isEspressoConnected = true;
         this.app.isConnecting = false;
         this.app.controller = controller;
     }
     onDisconnected(): void {
+        this.app.isEspressoConnected = false;
         this.app.isConnecting = false;
         this.app.temp = undefined;
         this.app.heatPwr = undefined;
+        this.app.controller = undefined;
     }
     onTemperatureChange(newTemp: number): void {
         this.app.temp = newTemp;
