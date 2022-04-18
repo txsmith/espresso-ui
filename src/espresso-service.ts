@@ -18,6 +18,83 @@ export interface EspressoController {
     setD(d: number): Promise<void>
 }
 
+export class EspressoWebSocketService implements EspressoController {
+    private ws: WebSocket;
+    private listeners: EspressoEventListener[];
+
+    private static async tryWebSocketConnect(tries: number = 5): Promise<WebSocket> {
+        try {
+            return await new Promise((resolve, reject) => {
+                if (tries <= 0) {
+                    reject("retries exceeded")
+                } else {
+                    const ws = new WebSocket("ws://espressomicro.local/")
+                    ws.onclose = (event: any) => reject("closed")
+                    ws.onopen = (event: any) => {
+                        console.log("WebSocket connected", event)
+                        resolve(ws);
+                    }
+                }
+            })
+        } catch (error) {
+            if (error === "closed")
+                return await this.tryWebSocketConnect(tries - 1)
+            else 
+                throw error
+        }
+    }
+
+    static async start(listeners: EspressoEventListener[]): Promise<void> {
+        listeners.forEach(l => l.onPairingStart());
+        const ws = await this.tryWebSocketConnect().catch(() => listeners.forEach(l => l.onDisconnected()));
+        if (ws) {
+            const instance = new EspressoWebSocketService(ws, listeners);
+            listeners.forEach(l => l.onConnected(instance));
+            ws.onclose = (event: any) => {
+                console.log("WebSocket closed", event);
+                listeners.forEach(l => l.onDisconnected());
+            }
+            ws.onerror = (event: any) => {
+                console.log("WebSocket error", event);
+                listeners.forEach(l => l.onDisconnected());
+            }
+            ws.onmessage = (event: MessageEvent) => {
+                const msg = JSON.parse(event.data);
+                console.log("WebSocket message", msg);
+                if (msg.message == "CONFIG") {
+                    listeners.forEach(l => l.onTargetTemperatureChange(msg.temperature));
+                    listeners.forEach(l => l.onPChange(msg.kP));
+                    listeners.forEach(l => l.onIChange(msg.kI));
+                    listeners.forEach(l => l.onDChange(msg.kD));
+                } else if (msg.message == "TEMPERATURE") {
+                    listeners.forEach(l => l.onTemperatureChange(msg.temperature))
+                } else if (msg.message == "HEATER") {
+                    listeners.forEach(l => l.onHeatPowerChange(msg.power))
+                }
+            }
+        }
+    }
+    private constructor(ws: WebSocket, listeners: EspressoEventListener[]) {
+        this.ws = ws;
+        this.listeners = listeners;
+    }
+    disconnect(): void {
+        this.ws.close();
+    }
+    setTargetTemperature(temperature: number): Promise<void> {
+        return Promise.resolve(this.ws.send(JSON.stringify({ message: "TEMPERATURE", value: temperature })));
+    }
+    setP(p: number): Promise<void> {
+        return Promise.resolve(this.ws.send(JSON.stringify({ message: "P", value: p })));
+    }
+    setI(i: number): Promise<void> {
+        return Promise.resolve(this.ws.send(JSON.stringify({ message: "I", value: i })));
+    }
+    setD(d: number): Promise<void> {
+        return Promise.resolve(this.ws.send(JSON.stringify({ message: "D", value: d })));
+    }
+
+}
 export class EspressoBLEService implements EspressoController {
     private static espressoServiceUUID: string = "00c0ffee-add1-c5ed-0000-000000000000";
     private static temperatureReadingUUID: string = "00c0ffee-add1-c5ed-0000-000000000001";

@@ -15,6 +15,7 @@
         "preserveConstEnums": true,
         "stripInternal": true,
         "strict": true,
+        "allowSyntheticDefaultImports": true,
         "outDir": "dist/build",
         "rootDir": "src",
         "lib": [
@@ -22,7 +23,7 @@
             "esnext"
         ],
         "types": [
-            "web-bluetooth"
+            "web-bluetooth", "mdns"
         ]
     },
     "include": [

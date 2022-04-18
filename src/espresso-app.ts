@@ -4,17 +4,18 @@ import { observable } from "@microsoft/fast-element";
 import { library, dom } from '@fortawesome/fontawesome-svg-core';
 import { faBluetooth } from '@fortawesome/free-brands-svg-icons'
 import { faGear, faDroplet, faLinkSlash, faLink, faBolt, faCircleQuestion } from '@fortawesome/free-solid-svg-icons'
-import { EspressoBLEService, EspressoController, EspressoEventListener } from './espresso-service';
+import { EspressoWebSocketService, EspressoController, EspressoEventListener } from './espresso-service';
+import { ColorScale, rgbToHSL } from "@microsoft/fast-colors";
 
 library.add(faBluetooth, faGear, faDroplet, faLinkSlash, faLink, faBolt, faCircleQuestion);
 
 const template = html<EspressoApp>`
 <fast-toolbar>
-    ${when(x => x.temp, html<EspressoApp>`<div>${x => x.temp?.toFixed(1)}</div>`)}
-    ${when(x => x.heatPwr! >= 0.8, html<EspressoApp>`<i class="active fa-solid fa-bolt"></i>`)}
-    ${when(x => x.heatPwr! > 0 && x.heatPwr! < 0.8, html<EspressoApp>`<i class="fa-solid fa-bolt"></i>`)}
-    ${when(x => x.isEspressoConnected, html<EspressoApp>`<i class="fa-solid fa-link"></i>`)}
-    ${when(x => !x.isEspressoConnected, html<EspressoApp>`<i hidden class="fa-solid fa-link-slash"></i>`)}
+    ${when(x => x.temp! >= 0, html<EspressoApp>`<div>${x => x.temp?.toFixed(1)} °C</div>`)}
+    ${when(x => x.heatPwr! >= 0.8, html<EspressoApp>`<div>${x => (Number(x.heatPwr) * 100).toFixed(0)}% <i class="active fa-solid fa-bolt"></i></div>`)}
+    ${when(x =>x.heatPwr! < 0.8, html<EspressoApp>`<div>${x => (Number(x.heatPwr) * 100).toFixed(0)}% <i class="fa-solid fa-bolt"></i></div>`)}
+    ${when(x => x.isEspressoConnected, html<EspressoApp>`<div><i class="fa-solid fa-link"></i></div>`)}
+    ${when(x => !x.isEspressoConnected, html<EspressoApp>`<div><i hidden class="fa-solid fa-link-slash"></i></div>`)}
 </fast-toolbar>
 <fast-tabs>
     <fast-tab slot="tab">
@@ -52,11 +53,11 @@ const template = html<EspressoApp>`
                     </li>
                     <li class="row">    
                         <div>kI</div>
-                        <fast-text-field ?disabled=${x => !x.isEspressoConnected} hide-step appearance="filled" id="kI" name="kI"value=${x => x.i} @change=${(x,e) => x.setI(e.event)}>
+                        <fast-number-field ?disabled=${x => !x.isEspressoConnected} hide-step appearance="filled" id="kI" name="kI" value=${x => x.i} @change=${(x,e) => x.setI(e.event)}>
                     </li>
                     <li class="row">
                         <div>kD</div>
-                        <fast-text-field ?disabled=${x => !x.isEspressoConnected} hide-step appearance="filled" id="kD" value=${x => x.d} @change=${(x,e) => x.setP(e.event)}>
+                        <fast-number-field ?disabled=${x => !x.isEspressoConnected} hide-step appearance="filled" id="kD" name="kD" value=${x => x.d} @change=${(x,e) => x.setD(e.event)}>
                     </li>
                 </ul>
         
@@ -154,8 +155,8 @@ fast-toolbar {
     color: rgb(167, 167, 167);
 }
 fast-toolbar svg {
-    width: 1em;
-    height: 1em;
+    width: 18px;
+    height: 18px;
 }
 .active {
   color: var(--accent-foreground-rest);
@@ -200,16 +201,28 @@ export class EspressoApp extends FASTElement {
     controller?: EspressoController;
 
     setP(event: Event): void {
-        if (this.controller) { this.controller.setP(Number.parseFloat((event.target as NumberField).currentValue)); }
+        const num = Number.parseFloat((event.target as NumberField).currentValue)
+        if (this.controller && num != this.p) { 
+            this.controller.setP(num).then(() => this.p = num); 
+        }
     }
     setI(event: Event): void {
-        if (this.controller) { this.controller.setI(Number.parseFloat((event.target as NumberField).currentValue)); }
+        const num = Number.parseFloat((event.target as NumberField).currentValue)
+        if (this.controller && num != this.i) { 
+            this.controller.setI(num).then(() => this.i = num); 
+        }
     }
     setD(event: Event): void {
-        if (this.controller) { this.controller.setD(Number.parseFloat((event.target as NumberField).currentValue)); }
+        const num = Number.parseFloat((event.target as NumberField).currentValue)
+        if (this.controller && num != this.d) { 
+            this.controller.setD(num).then(() => this.d = num); 
+        }
     }
     setTargetTemp(event: Event): void {
-        if (this.controller) { this.controller.setTargetTemperature(Number.parseFloat((event.target as NumberField).currentValue)); }
+        const num = Number.parseFloat((event.target as NumberField).currentValue)
+        if (this.controller && num != this.targetTemp) { 
+            this.controller.setTargetTemperature(num).then(() => this.targetTemp = num); 
+        }
     }
     connectedCallback() {
         super.connectedCallback();
@@ -221,8 +234,12 @@ export class EspressoApp extends FASTElement {
     }
 
     connectButtonClick() {
-        const espressoListener: EspressoEventListener = new EspressoAppListener(this);
-        EspressoBLEService.start([espressoListener]);
+        if (this.controller) {
+          this.controller.disconnect();
+        } else {
+            const espressoListener: EspressoEventListener = new EspressoAppListener(this);
+            EspressoWebSocketService.start([espressoListener]);
+        }
     }
 }
 
@@ -261,5 +278,8 @@ class EspressoAppListener extends EspressoEventListener {
     }
     onTargetTemperatureChange(newTargetTemparature: number): void {
         this.app.targetTemp = newTargetTemparature;
+    }
+    onHeatPowerChange(newHeatPower: number): void {
+        this.app.heatPwr = newHeatPower;
     }
 }
